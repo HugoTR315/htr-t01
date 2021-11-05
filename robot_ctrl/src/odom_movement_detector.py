@@ -1,73 +1,62 @@
-#!/usr/bin/env python
-
-import rospy
+#!/usr/bin/env python3
+import rospy as ros
 import math
-from rospy.core import deprecated, rospydebug
 from std_msgs.msg import Float64
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point
 
 class MovementDetector(object):
-    # Declaramos la clase con un constructor
-    def __init__(self):
+    def __init__(self) :
         """Inicializamos los valores de la clase"""
-        self._mved_distance = Float64() # Este es un objeto
-        self._mved_distance.data = 0.0 # Este es el valor del objeto
-        self._current_position = Point()# Es uno de los tipos de mensje que se utulizan en ros
+        self._moved_distance = Float64()
+        self._moved_distance.data = 0.0
+        self._current_position = Point()
         self.get_init_position()
-        self.distance_mved_pub = rospy.Publisher('/moved_distance', Float64, queue_size=1)
-        self.distance_mved_sub = rospy.Subscriber('odom', Odometry,self.odom_callback)
+        self.distance_moved_pub = ros.Publisher('/moved_distance', Float64, queue_size=1) #no deja espacio pa publicar
+        self.distance_moved_sub = ros.Subscriber('/odom', Odometry, self.odom_callback)
 
-# Necesitamos una función para poder calcular todo lo que tnemeos
+    def get_init_position(self):
+        data_odom = None
+        while data_odom is None:
+            try:
+                data_odom = ros.wait_for_message('/odom',Odometry, timeout=1)#encierra en un ciclo de espera 
+            except Exception as e:
+                ros.logerr(e)
+                #ros.loginfo("El topic odom no se encuentra activo, esperando.")
+        self._current_position.x = data_odom.pose.pose.position.x
+        self._current_position.y = data_odom.pose.pose.position.y
+        self._current_position.z = data_odom.pose.pose.position.z
 
-def get_init_position(self):
-    data_odom = None #Función de espera
-    while data_odom is None:
-        try:
-            #Encerramos este codigo en un siclo de espera
-            data_odom = rospy.wait_for_message('/odom',Odometry,timeout=1)
-        except Exception as e:
-            # Muy usada para depurar print (str(e))
-            rospy.logerr(e)
-            # rospy.loginfo("El topico no se encuentra activo, esperando.")
-    # Si salimos del ciclo, quiere decir que la variable ya esta inicializada
-    self._current_position.x = data_odom.pose.pose.position.x
-    self._current_position.y = data_odom.pose.pose.position.y
-    self._current_position.z = data_odom.pose.pose.position.z
+    def odom_callback(self, msg):
+        newPosition = msg.pose.pose.position
+        self._moved_distance.data += self.calculate_distance(newPosition, self._current_position)
+        self.update_curpos(newPosition)
+        if self._moved_distance.data < 0.000001:
+            aux = Float64()
+            aux.data = 0.0
+            self.distance_moved_pub.publish(aux)
+        else:
+            self.distance_moved_pub.publish(self._moved_distance)
 
-def odom_callback(self,msg):
-    NewPos = msg.pose.pose.postion
-    self._mved_distance.data += self.calculate_distance(NewPos,self._current_position)
-    self.update_curpos(NewPos)
-    if self._mved_distance.data<0.000001:
-        aux = Float64()
-        aux.data = 0.0
-        self.distnace_moved_pub.publish(aux)
-    else:
-        self.distance_moved_pub.piblish(self._mved_distance)
+    def update_curpos(self, newPosition):
+        self._current_position.x = newPosition.x
+        self._current_position.y = newPosition.y
+        self._current_position.z = newPosition.z
+    
+    def calculate_distance (self, newPosition, old_position):
+        x2 = newPosition.x
+        x1 = old_position.x
+        y2 = newPosition.y  
+        y1 = old_position.y
+    #Esta fuincion nos ayuda para calcular la distancia
+        dist = math.hypot(x2-x1, y2-y1)
+        return dist
+    
+    def publish_moved_distance(self):
+        #
+        ros.spin()
 
-def update_curpos(self,newpos):
-    self._current_position.x = newpos.x
-    self._current_position.x = newpos.y
-    self._current_position.x = newpos.z
-
-def calculate_distance(self,NewPos,CurPos):
-    x2=NewPos.x
-    x1=CurPos.x
-    y2=NewPos.y
-    y1=CurPos.y
-
-    dist =math.hypot(x2-x1,y2-y1)
-    return dist
-
-def publish_moved_distance(self):
-    # spin() simplemente evita que Python salga hasta que el nodo se detenga
-    rospy.spin()
-
-
-if __name__ =='__main__':
-    # Crear un nodo para correr el proceso
-    rospy.init_node('movement_detector_node')
-    # Creamos la instancia de la clase MovementDetector y poner el programa a funcionar
-    mov_det = MovementDetector()
-    mov_det = publish_moved_distance
+if __name__ == '__main__':
+    ros.init_node('movement_detector_node')
+    mov_dec = MovementDetector()
+    mov_dec.publish_moved_distance()
