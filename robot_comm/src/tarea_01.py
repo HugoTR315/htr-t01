@@ -13,13 +13,9 @@ msg = """
 Controla tu robot!
 ---------------------------
 Comandos de movimiento:
-
 Escribe "Avanza" o "avanza" para ir hacia delante
-
 Escribe "Detente" o "detente" para detenerte
-
 Escribe "Gira" o "gira" para girar
-
 Escribe "Exit" o "exit" para salir del programa
 """
 
