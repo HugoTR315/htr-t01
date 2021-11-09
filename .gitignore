@@ -1,4 +1,4 @@
 .vscode/
-pubsub/.vscode/
+pubsub/
 CMakeLists.txt
 t01/
