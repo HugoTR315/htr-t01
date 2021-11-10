@@ -56,7 +56,7 @@ if __name__=="__main__":
     pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
 
     # Obtenemos el modelo de turtlebot (waffle)
-    turtlebot3_model = rospy.get_param("model", "burger")
+    turtlebot3_model = rospy.get_param("model", "waffle")
 
     # Inicializamos nuestras variables para no tener errores
     status = 0
@@ -70,7 +70,7 @@ if __name__=="__main__":
         print(msg)
         print("\n\nPor favor ingresa la accion que deseas\n\n")
         while(1):
-            key=input("--> ")# Aqui la función recibe nuestro string
+            key=input("--> ")# Aqui la funcion recibe nuestro string
             # Preguntamos la accion y dependiendo de eso hacemos lo que nos indica
             if key == 'Avanza' or key == "avanza" :
                 target_linear_vel = checkLinearLimitVelocity(target_linear_vel + LIN_VEL_STEP_SIZE)
@@ -100,7 +100,7 @@ if __name__=="__main__":
             twist.angular.x = 0.0; twist.angular.y = 0.0; twist.angular.z = control_angular_vel
 
             pub.publish(twist)
-
+    
     except:
         print(e)
 

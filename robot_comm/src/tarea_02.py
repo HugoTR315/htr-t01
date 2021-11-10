@@ -1,12 +1,16 @@
-# .............. Programa anterior ..............
-
 #!/usr/bin/env python
 
 import rospy
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist,Point
 import sys, select, os
 from nav_msgs.msg import Odometry
 from pubsub.msg import Estatus
+
+from re import sub
+from threading import current_thread
+from nav_msgs import msg
+import rospy
+import math
 
 WAFFLE_MAX_LIN_VEL = 1
 WAFFLE_MAX_ANG_VEL = 2
@@ -58,22 +62,45 @@ def checkAngularLimitVelocity(vel):
       vel = constrain(vel, -WAFFLE_MAX_ANG_VEL, WAFFLE_MAX_ANG_VEL)
     return vel
 
-def init_monitor():
-    sub = rospy.Subscriber('odom', Odometry, process_msg_callback)
-    rospy.init_node('monitor')
-    rospy.spin()
+def vel_new(control_linear_vel,control_angular_vel):
+    twist = Twist()
+    control_linear_vel = makeSimpleProfile(control_linear_vel, target_linear_vel, (LIN_VEL_STEP_SIZE/2.0))
+    twist.linear.x = control_linear_vel; twist.linear.y = 0.0; twist.linear.z = 0.0
+    control_angular_vel = makeSimpleProfile(control_angular_vel, target_angular_vel, (ANG_VEL_STEP_SIZE/2.0))
+    twist.angular.x = 0.0; twist.angular.y = 0.0; twist.angular.z = control_angular_vel
+    pub.publish(twist)
+
+
+# .................. Nuevas funciones ..................
+
+def inicio(): # Creamos una funcion para inicializar todo
+    odom_msg = None
+    current_position = None
+    while odom_msg is None:
+        try:
+            odom_msg = rospy.wait_for_message('/odom',Odometry,timeout=10)
+        except Exception as e:
+            rospy.logerr(str(e))
+            exit()
+
+    current_position = odom_msg.pose.pose.position #Guardamos el valor de la posicion
     
-def process_msg_callback(msg):
-    px = msg.pose.pose.position.x
-    py = msg.pose.pose.position.y
-    rospy.loginfo('Actualmente el robot tiene posicion x = {:.2f} m, y = {:.2f} m/s'.format(px,py))
+    return current_position
+
+def callback_llamada(msg):
+    current_position = msg.pose.pose.position
+
+def extrae_plano(position):
+    return (position.x, position.y)
 
 if __name__=="__main__":
     rospy.init_node('turtlebot3_teleop')
     pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
+    #rospy.init_node('monitor')
+    sub = rospy.Subscriber('/odom',Odometry,callback_llamada)
 
     # Obtenemos el modelo de turtlebot (waffle)
-    turtlebot3_model = rospy.get_param("model", "burger")
+    turtlebot3_model = rospy.get_param("model", "waffle")
 
     # Inicializamos nuestras variables para no tener errores
     status = 0
@@ -92,11 +119,15 @@ if __name__=="__main__":
             keyx=int(input("Coordenada en X --> "))
             keyy=int(input("Coordenada en Y --> "))
 
+            #Obtnemos las coordenadas en las que nos encontramos
+            pos = extrae_plano(inicio())
+            posx=round(pos[0],4)
+            posy=round(pos[1],4)
+
             # Preguntamos la accion y dependiendo de eso hacemos lo que nos indica
             while (keyx != posx):
-                # La variable posx es la que nos dice donde nos encontramos respecto a x
-                # La variable posx la podemos encontrar en uno de los programas hechos por el profesor
 
+                # La variable posx es la que nos dice donde nos encontramos respecto a x
                 if posx < keyx: # Si la coordenada en x es negativa vamos hacia delante
                     target_linear_vel = checkLinearLimitVelocity(target_linear_vel + LIN_VEL_STEP_SIZE)
                     status = status + 1
@@ -112,16 +143,7 @@ if __name__=="__main__":
                     control_angular_vel = 0.0
 
                 # Iniciamos la parte donde reasignamos las nuevas velocidades                
-                twist = Twist()
-
-                control_linear_vel = makeSimpleProfile(control_linear_vel, target_linear_vel, (LIN_VEL_STEP_SIZE/2.0))
-                twist.linear.x = control_linear_vel; twist.linear.y = 0.0; twist.linear.z = 0.0
-
-                control_angular_vel = makeSimpleProfile(control_angular_vel, target_angular_vel, (ANG_VEL_STEP_SIZE/2.0))
-                twist.angular.x = 0.0; twist.angular.y = 0.0; twist.angular.z = control_angular_vel
-
-                pub.publish(twist)
-
+                vel_new()
 
             while (keyy != posy):
                 # La variable posy es la que nos dice donde nos encontramos respecto a y
@@ -142,16 +164,8 @@ if __name__=="__main__":
                     target_angular_vel  = 0.0
                     control_angular_vel = 0.0
                 
-                # Iniciamos la parte donde reasignamos las nuevas velocidades
-                twist = Twist()
-
-                control_linear_vel = makeSimpleProfile(control_linear_vel, target_linear_vel, (LIN_VEL_STEP_SIZE/2.0))
-                twist.linear.x = control_linear_vel; twist.linear.y = 0.0; twist.linear.z = 0.0
-
-                control_angular_vel = makeSimpleProfile(control_angular_vel, target_angular_vel, (ANG_VEL_STEP_SIZE/2.0))
-                twist.angular.x = 0.0; twist.angular.y = 0.0; twist.angular.z = control_angular_vel
-
-                pub.publish(twist)
+                # Iniciamos la parte donde reasignamos las nuevas velocidades                
+                vel_new()
 
     except:
         print(e)
