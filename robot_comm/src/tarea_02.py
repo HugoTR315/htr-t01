@@ -30,7 +30,7 @@ def sensor_callback(msg):
     global wall
     wall = msg.ranges[300] # Obtenemos la distancia que hay hacia un obstaculo
 
-# Iniciamos el noto
+# Iniciamos el nodo
 rospy.init_node("speed_controller")
 
 # Nos suscribimos y publicamos
@@ -45,7 +45,6 @@ x = 0.0
 y = 0.0
 theta = 0.0
 wall = 0.0
-count = 0
 
 # Asignamos la funcion Point() a una variable para tener comodidad al escribir
 goal = Point()
@@ -65,8 +64,8 @@ while not rospy.is_shutdown():
         print('Estamos en la coordenada (',round(x,2),' , ',round(y,2),')')
 
     # Calculamos la distancia que existe entre las coordenadas actuales y las que asignamos
-    inc_x = goal.x -x
-    inc_y = goal.y -y
+    inc_x = goal.x - x
+    inc_y = goal.y - y
 
     #Calculamos el angulo que existe entre los puntos   
     angle_to_goal = atan2(inc_y, inc_x)
@@ -85,7 +84,7 @@ while not rospy.is_shutdown():
         speed.linear.x = 0.0
         speed.angular.z = 0.3
         pub.publish(speed)
-        time.sleep(5) # Giramos por 5 segundos
+        time.sleep(6) # Giramos por 5 segundos
         # Avanzamos para evadir el obstaculo
         speed.linear.x = 0.5
         speed.angular.z = 0.0
@@ -111,10 +110,10 @@ while not rospy.is_shutdown():
         
         # Creamos una variable para preguntar si queremos coordenadas nuevas
         aux = input('Quieres coordenadas nuevas? [S = 1][N = 0] --> ')
-        if aux == 0 or aux == 0: # En caso de que no, entonces el programa terminara
+        if aux == 0: # En caso de que no, entonces el programa terminara
             print("Nos vemos :D")
             exit()
-        elif aux == 1 or aux == 1: # En caso de que si, entonces pedimos los mismos datos de nuevo
+        elif aux == 1: # En caso de que si, entonces pedimos los mismos datos de nuevo
             print("Va va va va ya estas, entonces vamos de nuevo 7u7r")
             goal.x = int(input('Escribe la coordenada en x --> '))
             goal.y = int(input('Escribe la coordenada en y --> '))
