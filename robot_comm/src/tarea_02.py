@@ -13,7 +13,6 @@ import time
 
 # Generamos una funcion para obtener nuestra posicion en X y Y
 def newOdom(msg):
-
     # Generamos variables globales para usarlas en cualquier lado
     global x
     global y
