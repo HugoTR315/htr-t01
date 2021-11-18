@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
 import rospy
+import math
 from geometry_msgs.msg import Point
 from nav_msgs.msg import Odometry
 from gazebo_msgs.srv import GetWorldProperties, GetModelState
 from robot_ctrl.srv import GetClosest, GetClosestResponse, GetDistance, GetDistanceResponse
+from rospy.impl.tcpros_base import recv_buff
 
 class GazeboUtils(object):
     def __init__(self) -> None:
@@ -82,9 +84,17 @@ class DisntanceMonitor():
 
         return response
     
-    def get_distance_srv(self):
-        pass
-
+    def get_distance_srv(self,request):
+        rospy.loginfo('GetDistanceService called')
+        if request.nombre not in self._landmarks:
+            rospy.logerr('\'{}\' no encontrado en landmarks.'.format(request.nombre))
+            return None
+        x, y = self._landmarks[request.nombre]
+        dx = x - self._position.x
+        dy = y - self._position.y
+        response = GetDistanceResponse()
+        response.distancia = math.hypot(dx,dy)
+        return response
 
 def test_services():
     gazebo_utils = GazeboUtils()
@@ -105,9 +115,19 @@ def test_services():
     else:
         print('Fallo la llamada al servicio /gazebo/get_world_properties')
 
+
+def main():
+    rospy.init_node('distance_monitor_server')
+    monitor = DisntanceMonitor()
+    rospy.spin()
+
+
 if __name__=='__main__':
-    landmarks = test_services
-    if landmarks:
-        print(landmarks)
-    else:
-        print('Falló al final')
+    #Corremos la clase que creamos
+    main()
+    
+#    landmarks = test_services
+#    if landmarks:
+#        print(landmarks)
+#    else:
+#        print('Falló al final')
