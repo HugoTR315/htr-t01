@@ -1,0 +1,12 @@
+robot_ctrl:
+  controller: {name: PID-Controller}
+  pid: {kd: 0.4, ki: 0.7, kp: 0.3}
+rosdistro: 'melodic
+
+  '
+roslaunch:
+  uris: {host_rosvm__37449: 'http://rosvm:37449/'}
+rosversion: '1.14.12
+
+  '
+run_id: 0b0b46b2-48c9-11ec-b84a-08002784249d
