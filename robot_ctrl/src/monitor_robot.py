@@ -68,7 +68,7 @@ class DisntanceMonitor():
         self._position = msg.pose.pose.position
 
     def get_closest_srv(self):
-        rospy.loginfo('GetClosest llamado')
+        rospy.loginfo('GetClosestService called')
         closest_landmark = ''
         closest_distance = -1
         for model_name, (x,y) in self._landmarks.items():
